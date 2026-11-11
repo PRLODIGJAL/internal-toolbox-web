@@ -1,0 +1,2018 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>内部工具库</title>
+<style>
+/* ============================================================
+   内部工具库 · 样式
+   遵循《浅色系 UI 风格指南 v1.0》：浅底、细线、大面积留白，
+   饱和色只占 ≤5%，不用阴影/渐变/位移动画。
+   ============================================================ */
+
+:root{
+  /* 三级底色 */
+  --bg:#f5f6f8;            /* 窗口底 */
+  --panel:#ffffff;         /* 卡片 */
+  --panel-2:#f7f9fc;       /* 块中块 */
+  --hover:#eaf1ff;         /* 悬停 / 浅蓝底 */
+  --status:#eceef1;        /* 收口条 / 中性徽标底 */
+
+  /* 线条与文字 */
+  --line:#d9dee5;          /* 全局唯一描边，1px */
+  --line-2:#eef0f3;        /* 极淡分隔 */
+  --tx:#2a2f36;            /* 正文，不用纯黑 */
+  --tx-2:#7a828c;          /* 次要 */
+  --tx-3:#9aa1a9;          /* 弱提示 */
+  --tx-4:#c3c8ce;          /* 禁用 */
+
+  /* 强调 */
+  --accent:#2f6fed;        /* 主色，面积 ≤5% */
+  --accent-d:#2257c4;      /* 主色深 */
+  --accent-band:#d9e7fc;   /* 区块带 tint */
+  --accent-weak:#eaf1ff;   /* 表头 / 选中底 tint */
+  --accent-line:#c6d9f8;   /* 脊线 */
+
+  /* 语义 */
+  --warn:#a06100;
+  --warn-weak:#fbead2;
+  --warn-line:#f0dcb8;
+  --danger:#c0392b;
+
+  --r:6px;                 /* 小控件 */
+  --r-card:8px;            /* 卡片 */
+  --shadow-float:0 8px 24px rgba(28,40,64,.08);  /* 唯一允许的阴影，只给浮层 */
+}
+
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--tx);
+  font:13px/1.62 "Microsoft YaHei UI","Microsoft YaHei","PingFang SC","Hiragino Sans GB","Segoe UI",system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+.mono,input.txt,pre.readme{font-family:"Cascadia Mono",Consolas,"SF Mono",Menlo,monospace}
+
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+code{
+  font-family:"Cascadia Mono",Consolas,"SF Mono",Menlo,monospace;
+  background:var(--panel-2);border:1px solid var(--line-2);border-radius:4px;
+  padding:0 4px;color:var(--tx-2);word-break:break-all;
+}
+
+/* ---------------- 顶栏 ---------------- */
+header{
+  position:sticky;top:0;z-index:20;background:var(--panel);
+  border-bottom:1px solid var(--line);
+  padding:14px 28px 0;
+}
+.hrow{display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;min-width:0}
+.mark{
+  width:32px;height:32px;border-radius:var(--r-card);flex:none;
+  background:var(--accent);color:#fff;
+  display:grid;place-items:center;font-weight:700;font-size:14px;
+}
+h1{font-size:16px;margin:0;font-weight:600}
+.sub{font-size:11.5px;color:var(--tx-3);margin-top:1px}
+.hmeta{margin-left:auto;text-align:right;font-size:11.5px;color:var(--tx-3);line-height:1.75}
+.hmeta b{color:var(--tx-2);font-weight:600}
+
+/* ---------------- 工具栏 ---------------- */
+.toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 0 13px}
+.search{position:relative;flex:1 1 260px;max-width:380px}
+.search input{
+  width:100%;padding:7px 28px 7px 30px;
+  border:1px solid var(--line);border-radius:var(--r);
+  background:var(--panel-2);color:var(--tx);font:inherit;outline:none;
+  transition:border-color .18s ease,background-color .18s ease;
+}
+.search input:focus{border-color:var(--accent);background:var(--panel)}
+.search .ico{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--tx-3);font-size:11.5px}
+.search .clr{
+  position:absolute;right:4px;top:50%;transform:translateY(-50%);
+  color:var(--tx-3);padding:2px 5px;border-radius:4px;display:none;font-size:11.5px;
+}
+.search .clr:hover{background:var(--line-2);color:var(--tx-2)}
+
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{
+  padding:5px 12px;height:30px;
+  border:1px solid var(--line);border-radius:999px;
+  font-size:13px;color:var(--tx-2);background:var(--panel);white-space:nowrap;
+  transition:color .18s ease,background-color .18s ease,border-color .18s ease;
+}
+.chip:hover{border-color:var(--accent-line);color:var(--tx)}
+.chip[aria-pressed="true"]{
+  background:var(--accent-weak);border-color:var(--accent-line);color:var(--accent-d);font-weight:600;
+}
+.chip .n{opacity:.7;margin-left:5px;font-size:11.5px}
+
+/* 分段切换（货架用）。只有 Windows 一种，不分系统 */
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.seg button{
+  height:30px;padding:0 11px;font-size:12.5px;color:var(--tx-2);background:var(--panel);
+  border:0;border-left:1px solid var(--line);
+}
+.seg button:first-child{border-left:0}
+.seg button:hover{background:#f0f2f5;color:var(--tx)}
+.seg button.on{background:var(--accent-weak);color:var(--accent-d);font-weight:600}
+
+/* 货架切换：软件工具库（离线工具）/ 文档代码库（skill、代码、规范）。
+   放标题旁边、字大一号。两柜都常显，后面跟个数；
+   哪柜是空的也不藏，点进去有建文件夹的指引。 */
+.seg.lg{align-self:center;margin:2px 0 0 2px}
+.seg.lg button{height:30px;padding:0 13px;font-size:13px}
+.seg.lg button .n{
+  margin-left:6px;font-size:11.5px;color:var(--tx-3);font-weight:400;
+}
+.seg.lg button.on .n{color:var(--accent-d);opacity:.8}
+
+/* 按钮三档：主（实心，一屏一个）/ 强调（浅蓝底）/ 次（白底细框） */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;
+  height:32px;padding:0 13px;
+  border:1px solid var(--line);border-radius:var(--r);
+  background:var(--panel);color:var(--tx-2);font-size:13px;white-space:nowrap;
+  transition:color .18s ease,background-color .18s ease,border-color .18s ease;
+}
+.btn:hover{background:#f0f2f5;color:var(--tx);border-color:var(--line);text-decoration:none}
+.btn{text-decoration:none}
+.btn.sm{height:28px;padding:0 10px}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+.btn.primary:hover{background:var(--accent-d);border-color:var(--accent-d);color:#fff}
+.btn.strong{background:var(--accent-weak);border-color:var(--accent-line);color:var(--accent-d);font-weight:600}
+.btn.strong:hover{background:var(--accent-band);border-color:var(--accent-line);color:var(--accent-d)}
+.btn:disabled{color:var(--tx-3);background:var(--panel-2);border-color:var(--line-2);cursor:not-allowed}
+
+/* ---------------- 卡片区 ---------------- */
+main{padding:20px 28px 60px;max-width:1480px;margin:0 auto}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(350px,1fr));gap:14px}
+
+/* 清单过期提示：只在这次没能自动重扫时露一条，平铺一行，不抢眼 */
+.stale{
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  margin:0 0 14px;padding:7px 12px;
+  background:var(--panel);border:1px solid var(--line);border-radius:var(--r);
+  font-size:12.5px;color:var(--tx-2);
+}
+.stale[hidden]{display:none}
+.stale .txt{flex:1;min-width:200px}
+.stale .txt b{color:var(--tx);font-weight:600}
+.stale .go{color:var(--accent);font-size:12.5px;font-weight:600;padding:2px 5px;border-radius:4px}
+.stale .go:hover{background:var(--accent-weak)}
+
+.card{
+  background:var(--panel);border:1px solid var(--line);border-radius:var(--r-card);
+  padding:14px 15px 12px;
+  display:flex;flex-direction:column;gap:8px;
+  transition:border-color .18s ease;
+}
+.card:hover{border-color:var(--accent)}
+.card.pending{background:var(--panel-2);border-style:dashed}
+.ctop{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.cname{font-size:14px;font-weight:600;overflow-wrap:anywhere}   /* 名字再长也换行，不撑破卡片 */
+.ver{
+  font-size:11.5px;font-weight:600;padding:0 6px;line-height:18px;border-radius:4px;
+  background:var(--accent-weak);color:var(--accent-d);border:1px solid var(--accent-line);
+  font-family:"Cascadia Mono",Consolas,monospace;
+}
+.ver.off{background:var(--status);color:var(--tx-3);border-color:var(--line-2);font-family:inherit;font-weight:500}
+.cat{
+  margin-left:auto;font-size:11.5px;line-height:18px;padding:0 7px;border-radius:4px;
+  color:var(--tx-2);background:var(--status);white-space:nowrap;
+}
+.cdesc{font-size:13px;color:var(--tx-2);line-height:1.62;margin:0}
+.cmeta{display:flex;gap:10px;flex-wrap:wrap;font-size:11.5px;color:var(--tx-3);padding-top:1px}
+.cmeta span{display:inline-flex;align-items:center}
+.cmeta span+span::before{
+  content:"";width:1px;height:9px;background:var(--line);
+  margin-right:10px;display:inline-block;
+}
+.tags{display:flex;gap:5px;flex-wrap:wrap}
+.tag{
+  font-size:11.5px;line-height:18px;padding:0 6px;border-radius:4px;
+  color:var(--tx-2);background:var(--panel-2);border:1px solid var(--line-2);
+}
+.cnote{
+  font-size:13px;color:var(--warn);background:var(--warn-weak);
+  border-left:2px solid var(--warn-line);border-radius:0 4px 4px 0;
+  padding:5px 9px;line-height:1.6;
+}
+.cacts{display:flex;gap:6px;flex-wrap:wrap;margin-top:auto;padding-top:3px;align-items:center}
+.cwho{margin-left:auto;font-size:11.5px;color:var(--tx-3);white-space:nowrap}
+
+/* 版本号旁那颗「历史 2」小按钮 */
+.vermore{
+  font-size:11.5px;line-height:18px;padding:0 6px;border-radius:4px;
+  color:var(--accent-d);background:var(--accent-weak);border:1px solid var(--accent-line);
+  transition:background-color .18s ease;
+}
+.vermore:hover{background:var(--accent-band);text-decoration:none}
+/* 真有历史版本时：实心蓝，一眼看出这张卡还有旧版可拿 */
+.vermore.on{color:#fff;background:var(--accent);border-color:var(--accent);font-weight:600}
+.vermore.on:hover{background:var(--accent-d);border-color:var(--accent-d)}
+/* 没有历史版本时：照样留着，灰掉，鼠标上去有说明 */
+.vermore:disabled,
+.vermore:disabled:hover{
+  color:var(--tx-3);background:var(--panel-2);border-color:var(--line-2);
+  cursor:default;
+}
+
+/* 历史版本列表 */
+.vrow{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line-2);font-size:13px}
+.vrow:last-child{border-bottom:0}
+.vrow .vv{width:58px;font-weight:600;color:var(--tx);font-family:"Cascadia Mono",Consolas,monospace;font-size:12px}
+.vrow .vm{flex:1;color:var(--tx-3);font-size:11.5px}
+.vrow.cur .vv{color:var(--accent-d)}
+.flag{
+  font-size:11.5px;line-height:18px;padding:0 6px;border-radius:4px;
+  color:#5a626f;background:var(--status);
+}
+
+/* 文档代码库的文件清单：一行一个文件，路径照原样写（skill 靠层级认东西） */
+.frow{
+  display:flex;align-items:center;gap:10px;padding:8px 0;
+  border-bottom:1px solid var(--line-2);font-size:13px;
+}
+.frow:last-child{border-bottom:0}
+.frow .fn{
+  flex:1;min-width:0;color:var(--tx);word-break:break-all;
+  font-family:"Cascadia Mono",Consolas,"SF Mono",Menlo,monospace;font-size:12.5px;
+}
+.frow .fs{color:var(--tx-3);font-size:11.5px;white-space:nowrap}
+
+/* ---------------- 空态 ---------------- */
+.empty{
+  text-align:center;padding:60px 24px;color:var(--tx-3);
+  border:1px dashed var(--line);border-radius:var(--r-card);background:var(--panel-2);
+}
+.empty h3{color:var(--tx-2);font-size:14px;margin:0 0 7px;font-weight:600}
+.empty ol{text-align:left;max-width:520px;margin:12px auto 0;font-size:13px;line-height:2}
+
+/* ---------------- 浮层 ---------------- */
+.mask{
+  position:fixed;inset:0;z-index:60;background:rgba(245,246,248,.86);
+  display:none;align-items:flex-start;justify-content:center;padding:56px 20px 32px;overflow:auto;
+}
+.mask.on{display:flex}
+.modal{
+  background:var(--panel);border:1px solid var(--line);border-radius:var(--r-card);
+  box-shadow:var(--shadow-float);
+  width:100%;max-width:640px;
+}
+.mhead{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--line)}
+.mhead h2{font-size:14px;margin:0;font-weight:600;flex:1}
+.mx{
+  width:26px;height:26px;border-radius:var(--r);display:grid;place-items:center;
+  color:var(--tx-3);font-size:14px;transition:color .18s ease,background-color .18s ease;
+}
+.mx:hover{background:var(--panel-2);color:var(--tx)}
+.mbody{padding:16px 18px 18px;max-height:calc(100vh - 220px);overflow:auto}
+.mfoot{
+  display:flex;gap:8px;justify-content:flex-end;align-items:center;
+  padding:12px 18px;border-top:1px solid var(--line);background:var(--panel-2);
+  border-radius:0 0 var(--r-card) var(--r-card);
+}
+.mfoot .help{margin-right:auto;font-size:11.5px;color:var(--tx-3)}
+.mfoot .help b{color:var(--tx-2);font-weight:600}
+
+/* ---------------- 表单与说明块 ---------------- */
+.field{margin-bottom:16px}
+.field:last-child{margin-bottom:0}
+label.lb{display:block;font-size:13px;font-weight:600;color:var(--tx-2);margin-bottom:6px}
+.hint{font-size:11.5px;color:var(--tx-3);line-height:1.75;margin-top:6px}
+input.txt{
+  width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:var(--r);
+  background:var(--panel-2);color:var(--tx);font-size:13px;outline:none;
+  transition:border-color .18s ease,background-color .18s ease;
+}
+input.txt:focus{border-color:var(--accent);background:var(--panel)}
+.now{
+  background:var(--panel-2);border:1px solid var(--line);border-radius:var(--r);
+  padding:9px 11px;font-size:13px;color:var(--tx-2);word-break:break-all;line-height:1.85;
+}
+.now .k{color:var(--tx-3);margin-right:6px}
+.sect-t{
+  font-size:11.5px;font-weight:700;letter-spacing:.6px;color:var(--tx-3);
+  margin:20px 0 9px;padding-bottom:5px;border-bottom:1px solid var(--line-2);
+}
+.sect-t:first-child{margin-top:0}
+
+.dsteps{counter-reset:s;list-style:none;padding:0;margin:0}
+.dsteps li{counter-increment:s;position:relative;padding:0 0 13px 32px;font-size:13px;color:var(--tx-2);line-height:1.68}
+.dsteps li::before{
+  content:counter(s);position:absolute;left:0;top:1px;
+  width:21px;height:21px;border-radius:50%;
+  background:var(--accent-weak);color:var(--accent-d);border:1px solid var(--accent-line);
+  display:grid;place-items:center;font-size:11.5px;font-weight:700;
+}
+.dsteps li:not(:last-child)::after{
+  content:"";position:absolute;left:10px;top:25px;bottom:2px;width:1px;background:var(--line);
+}
+.dsteps b{color:var(--tx);font-weight:600}
+
+.kv{display:grid;grid-template-columns:92px 1fr;gap:6px 12px;font-size:13px}
+.kv dt{color:var(--tx-3)}
+.kv dd{margin:0;color:var(--tx-2);word-break:break-all}
+
+pre.readme{
+  background:var(--panel-2);border:1px solid var(--line);border-radius:var(--r);
+  padding:11px 13px;font-size:13px;line-height:1.8;color:var(--tx-2);
+  white-space:pre-wrap;word-break:break-word;margin:0;
+}
+.empty-readme{font-size:13px;color:var(--tx-3);font-style:italic}
+
+/* ---------------- 轻提示 ---------------- */
+#toast{
+  position:fixed;left:50%;bottom:32px;transform:translate(-50%,10px);
+  background:var(--panel);color:var(--tx);
+  border:1px solid var(--line);border-radius:var(--r);
+  padding:9px 16px;font-size:13px;
+  opacity:0;pointer-events:none;z-index:90;max-width:80vw;
+  transition:opacity .18s ease,transform .18s ease;
+}
+#toast.on{opacity:1;transform:translate(-50%,0)}
+
+/* ---------------- 页脚 ---------------- */
+footer{
+  padding:16px 28px 40px;max-width:1480px;margin:0 auto;
+  font-size:11.5px;color:var(--tx-3);line-height:1.9;
+  border-top:1px solid var(--line);
+}
+footer code{background:var(--panel-2);border:1px solid var(--line-2);border-radius:4px;padding:1px 5px;font-size:11.5px}
+
+@media (max-width:640px){
+  header,main,footer{padding-left:16px;padding-right:16px}
+  .hmeta{width:100%;text-align:left;margin-left:0}
+  .grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hrow">
+    <div class="brand">
+      <div class="mark">工</div>
+      <div>
+        <h1 id="siteTitle">内部工具库</h1>
+        <div class="sub" id="siteSub"></div>
+      </div>
+    </div>
+    <div class="seg lg" id="segKind">
+      <button data-kind="app" aria-pressed="true">软件工具库<span class="n">0</span></button>
+      <button data-kind="doc" aria-pressed="false">文档代码库<span class="n">0</span></button>
+    </div>
+    <div class="hmeta">
+      <div><b id="statCount">0</b> 个 · 更新 <b id="statTime">—</b></div>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <div class="search">
+      <span class="ico">⌕</span>
+      <input id="q" type="search" placeholder="搜索" autocomplete="off" spellcheck="false">
+      <button class="clr" id="qclr" title="清空">✕</button>
+    </div>
+    <div class="chips" id="chips"></div>
+    <button class="btn sm" id="btnSort" title="切换排序">排序：推荐</button>
+    <button class="btn sm" id="btnRefresh" title="重新扫一遍 软件工具库 和 文档代码库">刷新清单</button>
+    <button class="btn sm" id="btnSet" title="设置">⚙ 设置</button>
+  </div>
+</header>
+
+<main>
+  <div class="stale" id="staleBar" hidden>
+    <span class="txt" id="staleTxt">清单可能不是最新的</span>
+    <button class="go" id="btnStaleClose">知道了</button>
+  </div>
+  <div class="grid" id="grid"></div>
+  <div id="emptyState"></div>
+</main>
+
+<footer>
+  <div id="footText"></div>
+</footer>
+
+<!-- ============ 设置 ============ -->
+<div class="mask" id="maskSet">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="setTitle" style="max-width:460px">
+    <div class="mhead">
+      <h2 id="setTitle">设置</h2>
+      <button class="mx" data-close="maskSet" title="关闭">✕</button>
+    </div>
+    <div class="mbody">
+      <div class="field">
+        <button class="btn strong" id="btnRescan">重新认文件夹</button>
+        <button class="btn" id="btnOpenRoot" style="margin-left:8px">打开库文件夹</button>
+        <div class="hint" id="scanHint">上次刷新：—</div>
+      </div>
+      <div class="field">
+        <label class="lb" for="inpTitle">标题</label>
+        <input class="txt" id="inpTitle" type="text" spellcheck="false">
+      </div>
+      <div class="field" style="margin-bottom:0">
+        <label class="lb" for="inpContact">默认联系人</label>
+        <input class="txt" id="inpContact" type="text" spellcheck="false">
+      </div>
+    </div>
+    <div class="mfoot">
+      <button class="btn" data-close="maskSet">关闭</button>
+      <button class="btn primary" id="btnSaveSet">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 工具详情 ============ -->
+<div class="mask" id="maskDet">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="detName">
+    <div class="mhead">
+      <h2 id="detName">—</h2>
+      <button class="mx" data-close="maskDet" title="关闭">✕</button>
+    </div>
+    <div class="mbody" id="detBody"></div>
+    <div class="mfoot" id="detFoot"></div>
+  </div>
+</div>
+
+<!-- ============ 历史版本 ============ -->
+<div class="mask" id="maskVer">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="verTitle" style="max-width:520px">
+    <div class="mhead">
+      <h2 id="verTitle">历史版本</h2>
+      <button class="mx" data-close="maskVer" title="关闭">✕</button>
+    </div>
+    <div class="mbody" id="verBody"></div>
+    <div class="mfoot" id="verFoot">
+      <button class="btn" data-close="maskVer">关闭</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+<script>
+/* ================= 注入的数据 ================= */
+/*__DATA_BEGIN__*/
+const CONFIG = {"title":"内部工具库","subtitle":"IT部","owner":"用户","contactDefault":"用户","people":["用户"],"dirs":{"admin":"admin","lib":"软件工具库","doc":"文档代码库"}};
+const DATA   = {"generated":"2026-11-10","tools":[]};
+/*__DATA_END__*/
+
+/* ================= 小工具 ================= */
+const $ = (s,r)=> (r||document).querySelector(s);
+
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+let toastTimer=null;
+function toast(msg, ms){
+  const t=$('#toast'); t.textContent=msg; t.classList.add('on');
+  clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('on'), ms||2200);
+}
+async function copyText(s){
+  try{
+    if(navigator.clipboard && window.isSecureContext!==false && navigator.clipboard.writeText){
+      await navigator.clipboard.writeText(s); return true;
+    }
+    throw new Error('no clipboard api');
+  }catch(e){
+    try{
+      const ta=document.createElement('textarea');
+      ta.value=s; ta.style.position='fixed'; ta.style.opacity='0';
+      document.body.appendChild(ta); ta.select();
+      const ok=document.execCommand('copy'); document.body.removeChild(ta);
+      return ok;
+    }catch(e2){ return false; }
+  }
+}
+function openModal(id){ $('#'+id).classList.add('on'); }
+function closeModal(id){ $('#'+id).classList.remove('on'); }
+
+/* ================= 路径解析 ================= */
+/* 库根目录的绝对路径。走本地服务时由 serve.py 告诉页面（/__lib 的 root），
+   双击 html 打开时页面自己从 location 推。整个文件夹搬到哪都不用改配置。 */
+let ROOT='';
+
+/* 三个文件夹叫什么，由 Python 那边生成时写进 CONFIG.dirs（只有一处定义），
+   这里给一份兜底 —— 万一 CONFIG 是旧的、没有 dirs，也不至于拼不出路径。 */
+const DIRS = (CONFIG && CONFIG.dirs) || {admin:'admin', lib:'软件工具库', doc:'文档代码库'};
+
+/* 页面本体在 admin\ 里（外面只留 启动工具库.bat），所以双击 html 打开时，
+   页面里的相对路径（软件工具库\xxx.zip、文档代码库\…）要退一层才对得上。
+   走本地服务时页面挂在根上，不用退。 */
+const IN_ADMIN = new RegExp('[\\\\/]' + DIRS.admin + '[\\\\/][^\\\\/]*$','i')
+  .test(decodeURIComponent(location.pathname||''));
+const REL = (location.protocol==='file:' && IN_ADMIN) ? '../' : '';
+
+/* 页面自己的文件名。写回网页时要用，从 location 现取 —— 名字改了也不怕 */
+function pageFile(){
+  const p = decodeURIComponent(location.pathname||'');
+  return p.replace(/^.*[\\\/]/,'') || 'page.html';
+}
+
+/* 页面自身所在目录，形如 C:\Users\...\内部工具库网页 */
+function pageDir(){
+  if(location.protocol!=='file:') return '';
+  let p = decodeURIComponent(location.pathname||'');
+  p = p.replace(/\/[^\/]*$/,'');       // 去掉文件名，留目录
+  p = p.replace(/^\//,'');             // /C:/x → C:/x
+  if(IN_ADMIN) p = p.replace(/[\\\/][^\\\/]*$/,'');   // 页面在 admin\ 里，退到库根
+  return p.replace(/\//g,'\\');
+}
+/* 相对路径 → Windows 绝对路径（给「复制路径」用） */
+function winPath(rel){
+  const base = (ROOT || pageDir()).replace(/[\\\/]+$/,'');
+  if(!base) return String(rel).replace(/\//g,'\\');
+  return base + '\\' + String(rel).replace(/\//g,'\\');
+}
+/* 相对路径 → 浏览器能点的 URL。写成相对的最稳：换电脑、换盘符都不用动 */
+function urlPath(rel){ return REL + String(rel).replace(/\\/g,'/'); }
+
+/* 纯网页版（直接双击 html 打开、没有黑窗口）时，库根在磁盘上的绝对路径。
+   页面住在 admin\ 里，所以把 href 末尾那个「文件.html」削掉、再退一层出 admin，
+   剩下的就是库根。要算「这个 zip 到底在 C 盘哪个位置」，只能靠它。 */
+function localRootPath(){
+  if(location.protocol!=='file:') return ROOT || '';
+  try{
+    let p = decodeURIComponent(location.pathname || '');
+    p = p.replace(/^\//,'');                          // /C:/Users/… → C:/Users/…
+    p = p.replace(/[\\\/][^\\\/]*$/,'');              // 削掉「软件库网站.html」
+    if(IN_ADMIN) p = p.replace(/[\\\/][^\\\/]*$/,''); // 再退一层，从 admin\ 出来
+    return p.replace(/\//g,'\\');
+  }catch(e){ return ''; }
+}
+
+/* 库里的相对路径 → 磁盘绝对路径（Windows 写法） */
+function absOf(rel){
+  const base = localRootPath();
+  if(!base) return '';
+  return base + '\\' + String(rel||'').replace(/\//g,'\\');
+}
+
+/* 复制一段文字。纯网页版就靠它把「路径」交给用户 ——
+   浏览器往剪贴板放不了文件，但文字是能放的。 */
+async function copyText(s){
+  try{
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      await navigator.clipboard.writeText(s);
+      return true;
+    }
+  }catch(e){ /* 没授权就退到下面的老办法 */ }
+  try{
+    const ta=document.createElement('textarea');
+    ta.value=s;
+    ta.setAttribute('readonly','');
+    ta.style.cssText='position:fixed;top:-1000px;left:0;opacity:0';
+    document.body.appendChild(ta);
+    ta.select();
+    ta.setSelectionRange(0, s.length);
+    const ok=document.execCommand('copy');
+    ta.remove();
+    return ok;
+  }catch(e){ return false; }
+}
+
+/* 这个工具/这份文档所在的文件夹（相对库根） */
+function folderOf(t){
+  if(!t) return '';
+  if(kindOf(t)==='doc') return t.dir || '';
+  const p = String(t.pkgPath||'');
+  const i = p.lastIndexOf('/');
+  return i>0 ? p.slice(0,i) : '';
+}
+
+/* 让本机的 serve.py 在资源管理器里打开库里某个文件夹。
+   只有在「启动工具库.bat」里打开网页时才有这条路 —— 浏览器自己不许开本地文件夹。
+   给同事装东西时用这个：整包复制过去，文件不带「来自网上下载」的标记，
+   双击 bat 一声不响，比下载省事。 */
+async function openFolder(rel, select){
+  if(!ROOT){
+    /* 纯网页版开不了资源管理器，那就把文件夹路径给他，粘地址栏一样能进 */
+    const base = localRootPath();
+    if(!base){ toast('算不出文件夹在磁盘上的位置'); return; }
+    const full = base + (rel ? '\\' + String(rel).replace(/\//g,'\\') : '');
+    const ok = await copyText(full);
+    if(ok) toast('已复制文件夹路径。粘到资源管理器地址栏回车就打开了', 5200);
+    else   toast('文件夹在：'+full, 8000);
+    return;
+  }
+  try{
+    const q = new URLSearchParams({p: rel||''});
+    if(select) q.set('select', select);
+    const r = await fetch('/__open?'+q.toString(), {headers:{'X-Lib':'1'}});
+    const j = await r.json();
+    if(!j.ok) toast('打不开：'+(j.why||''));
+  }catch(e){
+    toast('打不开：'+(e.message||e));
+  }
+}
+
+/* 把 zip 文件本身放进剪贴板（不是路径）。之后在资源管理器里右键「粘贴」，
+   落下来的就是这份文件 —— 没经过浏览器，所以不带「下载」标记，
+   双击里面的 bat 也不会弹「有风险」。
+   浏览器自己碰不到剪贴板里的文件，只有本机服务能放。 */
+/* 把某个文件（库里相对路径）放进 Windows 剪贴板。
+   浏览器只能往剪贴板放文字/图片，文件得让黑窗口那边的服务代劳。 */
+async function copyPath(rel, name){
+  if(!rel){ toast('这一条没有可复制的包'); return; }
+  if(!ROOT){
+    /* 纯网页版（双击 html 打开、这台机器也没装 Python）：
+       浏览器没能力把「文件」放进剪贴板，那就退一步，把它的完整路径复制出来。
+       粘到资源管理器地址栏一回车，文件立刻被选中，再 Ctrl+C 就是原件 ——
+       而且这份原件从来没被浏览器下载过，不会带「来自 Internet」的标记。 */
+    const full = absOf(rel);
+    if(!full){ toast('算不出这个文件在磁盘上的位置，去库里自己找一下吧'); return; }
+    const ok = await copyText(full);
+    if(ok) toast('已复制路径。粘到资源管理器地址栏回车，文件就被选中了', 5200);
+    else   toast('复制没成功，路径是：'+full, 8000);
+    return;
+  }
+  try{
+    const r = await fetch('/__copy?p='+encodeURIComponent(rel), {headers:{'X-Lib':'1'}});
+    const ct = r.headers.get('Content-Type') || '';
+    if(!r.ok || ct.indexOf('json') < 0){
+      /* 老版本的服务没有这个接口，会吐回一个 404 的网页 */
+      toast('没复制成：黑窗口里的程序是旧版本，把最新的 '+DIRS.admin+' 文件夹重新拷一份');
+      return;
+    }
+    const j = await r.json();
+    toast(j.ok ? '已复制「'+(name||'包')+'」，去文件夹里右键粘贴' : ('没复制成：'+(j.why||'')));
+  }catch(e){
+    toast('没复制成：'+(e.message||e));
+  }
+}
+
+/* 卡片上那颗「复制」：软件柜复制当前包，文档柜复制文件夹里那个 zip */
+async function copyFileToClipboard(t){
+  const d = dlOf(t);
+  if(!d){ toast('这一条没有可复制的包'); return; }
+  await copyPath(d.rel, d.name);
+}
+
+/* ================= 状态 ================= */
+/* kind 只在内存里，不写 localStorage：每次打开都回到「软件工具库」。
+   想一打开就落在某一柜，地址后面加 ?shelf=doc（自己会记住，可以存书签）。 */
+const state = { q:'', cat:'*', sort:'default', kind:'app' };
+
+function shelfFromUrl(){
+  try{
+    const k = new URLSearchParams(location.search).get('shelf');
+    if(k === 'doc' || k === 'app') state.kind = k;
+  }catch(e){}
+}
+/* 切换货架时把 ?shelf 写回地址栏，但不留历史记录、也不刷新 */
+function shelfToUrl(){
+  try{
+    const u = new URL(location.href);
+    if(state.kind === 'doc') u.searchParams.set('shelf','doc');
+    else u.searchParams.delete('shelf');
+    history.replaceState(null, '', u);
+  }catch(e){}
+}
+shelfFromUrl();
+
+/* 库里分两柜，规矩不一样：
+     软件工具库  —— 能下载下来装到本机的离线工具。留历史版本，
+                    卡片标题旁边挂版本徽章 v6.1。
+     文档代码库  —— skill / 代码 / 规范这类「不用安装、直接看或直接拖走」的东西。
+                    不写版本号（名字里就算写了也不认、不显示），
+                    也不产生历史版本，卡片上连「历史」都不出现；
+                    改动记录写在《IT工程部_项目总表》里，网站上只放当前这一版。
+   两柜一样的地方：负责人姓名都在卡片右下角，写成「找 用户」，不带部门
+   （部门在页头副标题里写一次就够了，不用每张卡重复）。 */
+function kindOf(t){ return (t && t.kind==='doc') ? 'doc' : 'app'; }
+
+/* 「最近更新」排序用；两柜的数据里都有 updated 这个字段 */
+function touched(t){ return String((t && t.updated) || ''); }
+
+function cats(){
+  const c=[];
+  DATA.tools.forEach(t=>{
+    if(kindOf(t)!==state.kind) return;
+    if(t.cat && c.indexOf(t.cat)<0) c.push(t.cat);
+  });
+  return c;
+}
+function catCount(c){
+  return DATA.tools.filter(t=> kindOf(t)===state.kind && t.cat===c ).length;
+}
+
+function filtered(){
+  const q=state.q.trim().toLowerCase();
+  let list=DATA.tools.filter(t=>{
+    if(kindOf(t)!==state.kind) return false;
+    if(state.cat!=='*' && t.cat!==state.cat) return false;
+    if(!q) return true;
+    const extra=[String(t.version||''), String(t.pkg||'')];
+    (t.files||[]).forEach(f=>extra.push(f.n));
+    /* 标题上写着的字都得搜得中：文件夹原名（含版本和姓名）、负责人 */
+    const hay=[t.name,t.folder||'',t.contact||'',t.desc,t.cat,
+               (t.tags||[]).join(' '),t.note||'',extra.join(' ')].join(' ').toLowerCase();
+    return hay.indexOf(q)>=0;
+  });
+  const label = t => String(t.folder || t.name || '');
+  if(state.sort==='name') list.sort((a,b)=> label(a).localeCompare(label(b),'zh'));
+  else if(state.sort==='updated') list.sort((a,b)=> touched(b).localeCompare(touched(a)));
+  else list.sort((a,b)=> (a.order||100)-(b.order||100) || label(a).localeCompare(label(b),'zh'));
+  return list;
+}
+
+/* ================= 渲染 ================= */
+function sizeText(n){
+  if(!n) return '—';
+  if(n<1024) return n+' B';
+  if(n<1024*1024) return (n/1024).toFixed(0)+' KB';
+  return (n/1048576).toFixed(1)+' MB';
+}
+
+function toolbarChips(){
+  const wrap=$('#chips');
+  const mine=DATA.tools.filter(t=> kindOf(t)===state.kind);
+  const list=cats().filter(c=>catCount(c)>0);
+  /* 东西少的时候分类没意义，整排不显示，省一行 */
+  if(mine.length<6 || list.length<2){ wrap.innerHTML=''; return; }
+  const all=mine.length;
+  let h='<button class="chip" data-cat="*" aria-pressed="'+(state.cat==='*')+'">全部<span class="n">'+all+'</span></button>';
+  list.forEach(c=>{
+    h+='<button class="chip" data-cat="'+esc(c)+'" aria-pressed="'+(state.cat===c)+'">'+esc(c)+'<span class="n">'+catCount(c)+'</span></button>';
+  });
+  wrap.innerHTML=h;
+}
+
+function cardHtml(t,i){
+  return kindOf(t)==='doc' ? cardDoc(t,i) : cardApp(t,i);
+}
+
+/* 弹窗上那行标题：软件工具库写「工具名 v版本」，文档代码库只有工具名
+   （这一柜不写版本，也不写姓名）。姓名统一在卡片的右下角。 */
+function titleOf(t){
+  const base = String(t.name || t.folder || '');
+  const v = String(t.version || '');
+  if(kindOf(t) === 'doc' || !v || v === '?') return base;
+  return base + '  v' + v;
+}
+
+/* 右下角那位：只写姓名，不带部门（部门在页头副标题里写着，不用每张卡重复）。
+   姓名从文件夹名读，读不出来就用 config.json 的 contactDefault。 */
+function whoText(t){
+  return String((t && t.contact) || '').trim();
+}
+
+/* 两柜同一个取法：要下载、要复制的到底是哪个压缩包。
+   软件柜 = 当前版本那个 zip；文档柜 = 文件夹里那个 zip（这一柜只有一个）。 */
+function dlOf(t){
+  if(kindOf(t)==='doc'){
+    const fs = t.files || [];
+    const zip = fs.find(f=>/\.zip$/i.test(f.n)) || fs[0];
+    return zip ? {rel: zip.rel, name: String(zip.n).split('/').pop(), size: zip.size} : null;
+  }
+  return t.pkgPath ? {rel: t.pkgPath, name: t.pkg || '', size: t.size} : null;
+}
+
+/* 两柜同一套按钮：复制（主）→ 下载（次）→ 说明（次）。
+   复制排第一，因为同事多数是「拷到自己文件夹里再解压」——
+   走浏览器下载会多一道「保留」确认，包还会被打上「来自网络」的标记。 */
+function actBtns(t, i){
+  const d = dlOf(t);
+  if(!d) return '<button class="btn sm" data-act="detail" data-i="'+i+'">说明</button>';
+  return ''
+  +  '<button class="btn sm strong" data-act="filecp" data-i="'+i+'"'
+  +    ' title="把压缩包本身放进剪贴板，到文件夹里右键粘贴就是它（不走浏览器，不带「来自网络」标记）">复制</button>'
+  +  '<a class="btn sm" data-act="dl" data-i="'+i+'" href="'+esc(urlPath(d.rel))+'"'
+  +    ' download="'+esc(d.name)+'">下载</a>'
+  +  '<button class="btn sm" data-act="detail" data-i="'+i+'">说明</button>';
+}
+
+/* 软件卡片：标题是工具名 + 版本徽章，负责人回右下角 —— 两柜同一套摆法。
+   只有 Windows，不分系统。 */
+function cardApp(t,i){
+  const meta=[];
+  if(t.size) meta.push('<span>'+sizeText(t.size)+'</span>');
+  if(t.updated) meta.push('<span>'+t.updated+'</span>');
+
+  const verChip = t.version ? '<span class="ver">v'+esc(t.version)+'</span>' : '';
+
+  /* 「历史」按钮：有历史时实心蓝（真能点），没历史灰着并说明为什么 */
+  const nOld = (t.older||[]).length;
+  const moreBtn = nOld
+    ? '<button class="vermore on" data-act="vers" data-i="'+i+'">历史 '+nOld+'</button>'
+    : '<button class="vermore" disabled title="还没有历史版本，当前这个就是最新版">历史</button>';
+
+  return ''
+  +'<article class="card" data-i="'+i+'">'
+  +  '<div class="ctop">'
+  +    '<span class="cname">'+esc(t.name)+'</span>'
+  +    verChip
+  +    moreBtn
+  +  '</div>'
+  +  (t.desc?'<p class="cdesc">'+esc(t.desc)+'</p>':'')
+  +  (meta.length?'<div class="cmeta">'+meta.join('')+'</div>':'')
+  +  (t.note?'<div class="cnote">'+esc(t.note)+'</div>':'')
+  +  '<div class="cacts">'+actBtns(t,i)
+  +    (whoText(t)?'<span class="cwho">找 '+esc(whoText(t))+'</span>':'')
+  +  '</div>'
+  +'</article>';
+}
+
+/* 文档代码库卡片：这一柜没有历史版本，所以「历史」连灰的都不摆；
+   按钮跟软件柜完全一致（复制 / 下载 / 说明）—— 两边一套，员工不用重新认。 */
+function cardDoc(t,i){
+  const nF=(t.files||[]).length;
+
+  const meta=[];
+  if(nF) meta.push('<span>'+nF+' 个文件</span>');
+  if(t.size) meta.push('<span>'+sizeText(t.size)+'</span>');
+  if(t.updated) meta.push('<span>'+t.updated+'</span>');
+
+  return ''
+  +'<article class="card" data-i="'+i+'">'
+  +  '<div class="ctop">'
+  +    '<span class="cname">'+esc(t.name)+'</span>'
+  +  '</div>'
+  +  (t.desc?'<p class="cdesc">'+esc(t.desc)+'</p>':'')
+  +  (meta.length?'<div class="cmeta">'+meta.join('')+'</div>':'')
+  +  (t.note?'<div class="cnote">'+esc(t.note)+'</div>':'')
+  +  '<div class="cacts">'+actBtns(t,i)
+  +    (whoText(t)?'<span class="cwho">找 '+esc(whoText(t))+'</span>':'')
+  +  '</div>'
+  +'</article>';
+}
+
+/* 货架切换器：两柜都常显，后面跟着数量。
+   空着的那一柜也点得进去 —— 里面写着怎么建文件夹，比灰掉更有用。 */
+function syncKindSeg(){
+  const n={app:0, doc:0};
+  DATA.tools.forEach(t=>{ n[kindOf(t)]++; });
+  const wrap=$('#segKind');
+  if(wrap){
+    wrap.querySelectorAll('[data-kind]').forEach(b=>{
+      const k=b.dataset.kind, act=(k===state.kind);
+      b.classList.toggle('on', act);
+      b.setAttribute('aria-pressed', act?'true':'false');
+      const s=b.querySelector('.n');
+      if(s) s.textContent=n[k];
+    });
+  }
+  return n;
+}
+
+function render(){
+  const n=syncKindSeg();
+  toolbarChips();
+
+  const list=filtered();
+  const g=$('#grid');
+  g.innerHTML=list.map(cardHtml).join('');
+
+  const isDoc = state.kind==='doc';
+  const mine = n[state.kind];
+  $('#emptyState').innerHTML = list.length? '' : (
+    mine
+    ? '<div class="empty"><h3>没有匹配的'+(isDoc?'文档':'工具')+'</h3><div>换个关键词试试。</div></div>'
+    : (isDoc
+      ? '<div class="empty"><h3>「'+esc(DIRS.doc)+'」还空着</h3>'
+        +'<div>这里放 skill、代码、规范这类不用安装、直接看或直接拖走的东西。</div>'
+        +'<ol><li>在 <code>'+esc(DIRS.doc)+'\\</code> 下建文件夹：<code>工具名+姓名</code>（这一柜不用写版本号）</li>'
+        +'<li>里面放文件本体 + 一份 <code>总说明.md</code>（从总表渲染，别手写）</li>'
+        +'<li>回到网页点「刷新清单」，它自己就出来了</li></ol></div>'
+      : '<div class="empty"><h3>「'+esc(DIRS.lib)+'」还空着</h3>'
+        +'<ol><li>在 <code>'+esc(DIRS.lib)+'\\</code> 下建文件夹：<code>工具名+版本号+姓名</code></li>'
+        +'<li>里面放一个 zip 和一份 <code>总说明.md</code></li>'
+        +'<li>回到网页点「刷新清单」，它自己就出来了</li></ol></div>')
+  );
+
+  $('#statCount').textContent = mine;
+  bindCards();
+}
+
+/* ================= 详情 ================= */
+/* 说明正文：掐掉开头那几行装饰（横线、以及"标题+横线"），标题弹窗顶上已有。
+   总说明.md 另有一套：`# P04　自动铺满图片VBA` + 一行灰标签（分类 · 部门 · 状态…）
+   都要掐掉，正文从「## 一句话」开始 —— 那两行弹窗顶上已经写过了。 */
+function readmeBody(s){
+  const lines=String(s||'').split(/\r?\n/);
+  const isRule=x=>/^[\s=—\-_·*#]{3,}$/.test(x);
+  const isMdTitle=x=>/^#\s+\S/.test(String(x).trim());
+  const isGrey=x=>(String(x).match(/ · /g)||[]).length>=2;
+  let i=0;
+  const skip=fn=>{ while(i<lines.length && fn(lines[i])) i++; };
+
+  skip(x=>!x.trim());
+  if(i<lines.length && isMdTitle(lines[i])){
+    i++;                                              // 「# P04　…」
+    skip(x=>!x.trim());
+    if(i<lines.length && isGrey(lines[i])) i++;        // 「效率类 · 用户 · 已完结 · v2.0 · 2026-11-06」
+    skip(x=>!x.trim());
+    return lines.slice(i).join('\n').trim();
+  }
+
+  skip(isRule);                                        // 开头的横线
+  skip(x=>!x.trim());
+  if(i+1<lines.length && isRule(lines[i+1])) i+=2;     // 标题 + 紧跟着的横线
+  skip(x=>!x.trim());
+  skip(isRule);                                        // 标题下面第二条横线
+  skip(x=>!x.trim());
+  return lines.slice(i).join('\n').trim();
+}
+
+function detailHtml(t){
+  return kindOf(t)==='doc' ? detailDoc(t) : detailApp(t);
+}
+
+/* 文档代码库的说明弹窗：讲清楚这是什么、怎么用，文件清单在「看文件」里 */
+function detailDoc(t){
+  const files=t.files||[];
+  /* 这一柜不写版本号，也不写部门 —— 负责人就在卡片右下角，弹窗里不重复一遍 */
+  const rows=[
+    ['类型', '文档代码库'],
+    ['文件', files.length? files.length+' 个' : '—'],
+    ['大小', sizeText(t.size)],
+    ['更新', esc(t.updated||'—')]
+  ];
+
+  let h='<div class="sect-t">基本信息</div><dl class="kv">';
+  rows.forEach(r=>{ h+='<dt>'+r[0]+'</dt><dd>'+r[1]+'</dd>'; });
+  h+='</dl>';
+
+  const body = readmeBody(t.readme);
+  if(body){
+    const long = body.length > 600;
+    h+='<div class="sect-t">它能干什么</div>';
+    h+='<pre class="readme" id="rdPre">'+esc(long ? body.slice(0,600).replace(/\s+$/,'')+'……' : body)+'</pre>';
+    if(long) h+='<button class="btn sm" id="rdMore" style="margin-top:8px">展开全文（共 '+body.length+' 字）</button>';
+  }
+  return h;
+}
+
+function detailApp(t){
+  const rows=[
+    ['版本', 'v'+esc(t.version||'?')],
+    ['大小', sizeText(t.size)],
+    ['更新', esc(t.updated||'—')]
+  ];
+
+  const steps=['<b>点「下载」</b>——zip 进「下载」文件夹；浏览器若问，点「保留」。',
+               '<b>解压</b>——右键 → 全部解压缩，别在压缩包里直接双击。'];
+  if(t.prep) steps.push('<b>双击 <code>'+esc(t.prep)+'</code></b>——首次要联网，约 1～3 分钟。');
+  if(t.launch) steps.push('<b>双击 <code>'+esc(t.launch)+'</code></b>');
+  else steps.push('<b>双击解压出来的 启动…bat</b>');
+
+  let h='';
+  h+='<div class="sect-t">基本信息</div><dl class="kv">';
+  rows.forEach(r=>{ h+='<dt>'+r[0]+'</dt><dd>'+r[1]+'</dd>'; });
+  h+='</dl>';
+
+  /* 顺序：装到本机在前，它能干什么在后。
+     来这儿的人多半是想装上就走，不是来读介绍的；介绍太长会把安装步骤顶到屏幕外。
+     包里那份说明书不再逐个列文件名（每个包固定就那一份），换成一句固定的话。 */
+  if(steps.length){
+    h+='<div class="sect-t">装到本机</div><ol class="dsteps">';
+    steps.forEach(s=>{ h+='<li>'+s+'</li>'; });
+    h+='</ol>';
+    h+='<div class="hint">每个按钮具体怎么点，见解压后文件夹里那份说明书。</div>';
+    /* 从网上下载的东西会被 Windows 打个「来自 Internet」的标记，解压后
+       每个文件都带着，双击 bat 就弹框。这不是病毒，最省事的解法是先解锁。 */
+    h+='<div class="hint">双击 bat 时弹「Windows 已保护你的电脑」或'
+      +'「此文件来自其他计算机，可能被阻止」—— 是下载标记，不是病毒：'
+      +'点「更多信息」→「仍要运行」就行。<br>'
+      +'想一次干净：解压前先右键那个 zip → 属性 → 最下面勾「解除锁定」→ 确定，再解压，'
+      +'里面所有文件都不再弹。</div>';
+  }
+
+  /* 介绍放最后，默认收着、点开还能收回去 */
+  const body = readmeBody(t.readme);
+  if(body){
+    const long = body.length > 600;
+    h+='<div class="sect-t">它能干什么</div>';
+    h+='<pre class="readme" id="rdPre">'+esc(long ? body.slice(0,600).replace(/\s+$/,'')+'……' : body)+'</pre>';
+    if(long) h+='<button class="btn sm" id="rdMore" style="margin-top:8px">展开全文（共 '+body.length+' 字）</button>';
+  }
+
+  const sha = t.sha256 || '';
+  if(sha){
+    h+='<div class="sect-t">SHA-256</div>';
+    h+='<div class="now mono" style="font-size:11.5px">'+esc(sha)+'</div>';
+  }
+  return h;
+}
+
+/* 「展开全文」要能收回去 —— 以前点了就把按钮删了，长说明只能一直摊着 */
+function wireReadMore(t){
+  const more=$('#rdMore'); if(!more) return;
+  const full=readmeBody(t.readme) || '';
+  const short=full.slice(0,600).replace(/\s+$/,'')+'……';
+  let open=false;
+  more.onclick=()=>{
+    open=!open;
+    $('#rdPre').textContent = open ? full : short;
+    more.textContent = open ? '收起' : ('展开全文（共 '+full.length+' 字）');
+    if(!open) $('#rdPre').scrollIntoView({block:'nearest'});
+  };
+}
+
+function openDetail(i){
+  const t=filtered()[i];
+  if(!t) return;
+
+  /* 文档代码库没有历史版本，按钮只留「复制文件夹路径」 */
+  if(kindOf(t)==='doc'){ openDocDetail(t); return; }
+
+  $('#detName').textContent = titleOf(t);
+  $('#detBody').innerHTML = detailHtml(t);
+
+  const f=$('#detFoot'); f.innerHTML='';
+  if(t.contact){
+    const s=document.createElement('span');
+    s.className='help';
+    s.innerHTML='装不上 / 报错 → 找 <b>'+esc(whoText(t))+'</b>';
+    f.appendChild(s);
+  }
+  {
+    const a=document.createElement('a');
+    a.className='btn strong'; a.textContent='下载';
+    a.href=urlPath(t.pkgPath); a.download=t.pkg||'';
+    f.appendChild(a);
+    const b=document.createElement('button');
+    b.className='btn'; b.textContent='复制路径';
+    b.title='下载被拦时用这个：复制路径，粘到资源管理器地址栏';
+    b.onclick=async()=>{ await doCopy(t); };
+    f.appendChild(b);
+
+    /* 给同事装：直接开文件夹，整包复制走 —— 复制过去的文件不带下载标记，
+       双击 bat 不会弹「有风险」 */
+    const ob=document.createElement('button');
+    ob.className='btn'; ob.textContent='打开文件夹';
+    ob.title='在资源管理器里打开这个工具的文件夹。整包复制给同事，比下载省事，也不会有安全提示';
+    ob.onclick=()=>openFolder(folderOf(t), t.pkg);
+    f.appendChild(ob);
+    /* 「历史版本」常显，没有就灰着并说明 */
+    const nOld = (t.older||[]).length;
+    const hb=document.createElement('button');
+    hb.className='btn'; hb.textContent = nOld? '历史版本（'+nOld+'）' : '历史版本';
+    if(nOld){
+      hb.onclick=()=>{ closeModal('maskDet'); openVersOf(t); };
+    }else{
+      hb.disabled=true;
+      hb.title='还没有历史版本，当前这个就是最新版';
+    }
+    f.appendChild(hb);
+  }
+  const c=document.createElement('button');
+  c.className='btn'; c.textContent='关闭';
+  c.onclick=()=>closeModal('maskDet');
+  f.appendChild(c);
+
+  wireReadMore(t);
+
+  openModal('maskDet');
+}
+
+function openDocDetail(t){
+  $('#detName').textContent = titleOf(t);
+  $('#detBody').innerHTML = detailDoc(t);
+
+  const f=$('#detFoot'); f.innerHTML='';
+  if(t.contact){
+    const s=document.createElement('span');
+    s.className='help';
+    s.innerHTML='用法不清楚 → 找 <b>'+esc(whoText(t))+'</b>';
+    f.appendChild(s);
+  }
+  const cp=document.createElement('button');
+  cp.className='btn strong'; cp.textContent='复制文件夹路径';
+  cp.title='粘到资源管理器地址栏，或者直接把这个文件夹拖进 AI 对话框';
+  cp.onclick=async()=>{
+    const p=winPath(t.dir||'');
+    if(!p){ toast('没认出文件夹位置'); return; }
+    const ok=await copyText(p);
+    toast(ok? '已复制：'+p : '复制失败，请手动挑选路径：'+p);
+  };
+  f.appendChild(cp);
+
+  const of=document.createElement('button');
+  of.className='btn'; of.textContent='打开文件夹';
+  of.title='在资源管理器里打开这个文件夹，要哪份直接拖走';
+  of.onclick=()=>openFolder(folderOf(t));
+  f.appendChild(of);
+
+  const cl=document.createElement('button');
+  cl.className='btn'; cl.textContent='关闭';
+  cl.onclick=()=>closeModal('maskDet');
+  f.appendChild(cl);
+
+  wireReadMore(t);
+
+  openModal('maskDet');
+}
+
+/* 文档代码库的文件清单：路径照原样写（skill 靠层级认东西），一行一个「拿一份」 */
+function openFilesOf(t){
+  if(!t) return;
+  $('#verTitle').textContent='文件 · '+titleOf(t);
+  const files=t.files||[];
+  let h='';
+  if(!files.length){
+    h='<div class="empty-readme">这个文件夹里没有文件</div>';
+  }else{
+    files.forEach(f=>{
+      const base=String(f.n).split('/').pop();
+      h+='<div class="frow">'
+       +   '<span class="fn">'+esc(f.n)+'</span>'
+       +   '<span class="fs">'+sizeText(f.size)+'</span>'
+       +   '<a class="btn sm" href="'+esc(urlPath(f.rel))+'" download="'+esc(base)+'">拿一份</a>'
+       + '</div>';
+    });
+  }
+  $('#verBody').innerHTML=h;
+
+  const f=$('#verFoot'); f.innerHTML='';
+  const cp=document.createElement('button');
+  cp.className='btn'; cp.textContent='复制文件夹路径';
+  cp.onclick=async()=>{
+    const p=winPath(t.dir||'');
+    if(!p){ toast('没认出文件夹位置'); return; }
+    const ok=await copyText(p);
+    toast(ok? '已复制：'+p : '复制失败，请手动挑选路径：'+p);
+  };
+  f.appendChild(cp);
+
+  const of=document.createElement('button');
+  of.className='btn'; of.textContent='打开文件夹';
+  of.title='在资源管理器里打开这个文件夹，要哪份直接拖走';
+  of.onclick=()=>openFolder(folderOf(t));
+  f.appendChild(of);
+
+  const cl=document.createElement('button');
+  cl.className='btn'; cl.textContent='关闭';
+  cl.onclick=()=>closeModal('maskVer');
+  f.appendChild(cl);
+
+  openModal('maskVer');
+}
+
+async function doCopy(t){
+  if(!t.pkgPath){ toast('这个工具没有可下载的包'); return; }
+  const p = winPath(t.pkgPath);
+  const ok = await copyText(p);
+  toast(ok? '已复制：'+p : '复制失败，请手动挑选路径：'+p);
+}
+
+/* ================= 历史版本 ================= */
+function openVers(i){ const t=filtered()[i]; if(t) openVersOf(t); }
+
+function openVersOf(t){
+  if(!t) return;
+  if(!t.pkgPath){ toast('这个工具没有可下载的包'); return; }
+  $('#verTitle').textContent='历史版本 · '+titleOf(t);
+
+  /* 每一行都是「复制 + 下载」，跟卡片上那两颗按钮同一套 —— 不管新版旧版，
+     拿包的动作都一样，不用重新学。 */
+  const row=(ver,pkg,path,size,day,isCur)=>
+      '<div class="vrow'+(isCur?' cur':'')+'">'
+    +   '<span class="vv">v'+esc(ver)+'</span>'
+    +   '<span class="vm">'+sizeText(size)+' · '+esc(day||'—')+(isCur?' · 当前':'')+'</span>'
+    +   '<button class="btn sm strong" data-oldcp="1" data-path="'+esc(path)+'"'
+    +     ' data-name="'+esc(pkg)+'">复制</button>'
+    +   '<a class="btn sm" href="'+esc(urlPath(path))+'" download="'+esc(pkg)+'">下载</a>'
+    + '</div>';
+
+  let h=row(t.version, t.pkg, t.pkgPath, t.size, t.updated, true);
+  (t.older||[]).forEach(o=>{ h+=row(o.v, o.pkg, o.pkgPath, o.size, o.updated, false); });
+  $('#verBody').innerHTML=h;
+
+  /* 弹窗里这些按钮是刚塞进去的，得现绑 */
+  $('#verBody').querySelectorAll('[data-oldcp]').forEach(b=>{
+    b.onclick=()=>copyPath(b.dataset.path, b.dataset.name);
+  });
+
+  const f=$('#verFoot'); f.innerHTML='';
+  const cl=document.createElement('button');
+  cl.className='btn'; cl.textContent='关闭';
+  cl.onclick=()=>closeModal('maskVer');
+  f.appendChild(cl);
+
+  openModal('maskVer');
+}
+
+/* ================= 事件 ================= */
+function bindCards(){
+  $('#grid').querySelectorAll('[data-act]').forEach(el=>{
+    el.addEventListener('click', async ev=>{
+      const i=+el.dataset.i;
+      const t=filtered()[i];
+      if(!t) return;
+      const act=el.dataset.act;
+      if(act==='detail'){ ev.preventDefault(); openDetail(i); }
+      else if(act==='vers'){ ev.preventDefault(); openVers(i); }
+      else if(act==='files'){ ev.preventDefault(); openFilesOf(t); }
+      else if(act==='copy'){ await doCopy(t); }
+      else if(act==='filecp'){ ev.preventDefault(); await copyFileToClipboard(t); }
+      else if(act==='browse'){
+        // 相对路径时浏览器自己会处理；非 file:// 打开就提示改用「复制路径」
+        if(location.protocol!=='file:'){
+          ev.preventDefault();
+          toast('本地文件才可浏览，请用「复制路径」');
+        }
+      }
+    });
+  });
+}
+
+$('#q').addEventListener('input', e=>{
+  state.q=e.target.value;
+  $('#qclr').style.display = state.q? 'block':'none';
+  render();
+});
+$('#qclr').addEventListener('click', ()=>{
+  $('#q').value=''; state.q=''; $('#qclr').style.display='none'; render(); $('#q').focus();
+});
+$('#chips').addEventListener('click', e=>{
+  const b=e.target.closest('[data-cat]'); if(!b) return;
+  state.cat=b.dataset.cat; render();
+});
+$('#btnSort').addEventListener('click', ()=>{
+  const order=[['default','推荐'],['name','名称'],['updated','最近更新']];
+  let k=order.findIndex(o=>o[0]===state.sort); k=(k+1)%order.length;
+  state.sort=order[k][0];
+  $('#btnSort').textContent='排序：'+order[k][1];
+  render();
+});
+$('#segKind').addEventListener('click', e=>{
+  const b=e.target.closest('[data-kind]'); if(!b) return;
+  if(b.dataset.kind===state.kind) return;
+  state.kind=b.dataset.kind;
+  state.cat='*';                 // 换柜时分类跟着换一套，旧的留着会筛空
+  shelfToUrl();
+  render();
+});
+$('#btnSet').addEventListener('click', ()=>{
+  $('#inpTitle').value   = CONFIG.title || '';
+  $('#inpContact').value = CONFIG.contactDefault || '';
+  const h=$('#scanHint');
+
+  /* 走本地服务时清单是现扫的，根本不用「认文件夹」——
+     那颗按钮留着只会让人多点一次、多弹一次选择框，直接收起来。 */
+  const r=$('#btnRescan');
+  if(r){
+    const byServer = !!ROOT;
+    r.style.display = byServer ? 'none' : '';
+    r.disabled = byServer;
+  }
+  if(h) h.textContent = ROOT
+      ? '清单由黑窗口现扫，每次打开都是最新的'
+      : (scanState || (DATA.generated
+          ? '上次刷新：'+DATA.generated+'，'+DATA.tools.length+' 个工具'
+          : '还没认过文件夹'));
+  openModal('maskSet');
+});
+
+/* 重新认文件夹：只有双击 html 那条路才用得上（走服务时按钮是藏起来的） */
+async function pickAndRescan(){
+  if(typeof window.showDirectoryPicker!=='function'){
+    toast('这个浏览器不支持，请用 Chrome 或 Edge 打开');
+    return false;
+  }
+  try{
+    const h=await window.showDirectoryPicker({mode:'readwrite'});
+    await doRescan(h);
+    return true;
+  }catch(e){
+    if(e && e.name!=='AbortError') toast('没选成：'+(e && e.message || e));
+    return false;
+  }
+}
+
+/* 顶栏「刷新清单」：就是刷新，不弹选择框。
+   走本地服务时这次刷新会重新扫盘；双击 html 打开时只能刷到网页里带的那份。 */
+$('#btnRefresh').addEventListener('click', ()=> refreshList());
+$('#btnStaleClose').addEventListener('click', hideStale);
+
+/* 设置里那颗「重新认文件夹」：手动调整用，会弹一次选择框 */
+$('#btnRescan').addEventListener('click', pickAndRescan);
+
+/* 设置里「打开库文件夹」：把整个内部工具库在资源管理器里打开，
+   要给同事一份时，直接把这个文件夹复制走 */
+$('#btnOpenRoot').addEventListener('click', ()=>openFolder(''));
+
+/* 改标题 / 默认联系人：走本地服务就存进 admin\设置.json，
+   双击 html 打开就写回网页文件（要授权）；都不行就只在这一会儿生效 */
+$('#btnSaveSet').addEventListener('click', async ()=>{
+  CONFIG.title   = $('#inpTitle').value.trim()   || '内部工具库';
+  CONFIG.contactDefault = $('#inpContact').value.trim() || '';
+
+  let saved=false;
+  if(location.protocol==='http:' || location.protocol==='https:'){
+    try{
+      const r=await fetch('/__lib',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({title:CONFIG.title, contactDefault:CONFIG.contactDefault})
+      });
+      const j=await r.json();
+      saved=!!j.ok;
+      if(j.config) applyConfig(j.config);
+    }catch(e){ saved=false; }
+  }else{
+    const h=await idbGet(LS_HANDLE);
+    if(h){
+      try{
+        const perm=await h.queryPermission({mode:'readwrite'});
+        saved = perm==='granted' ? await writeBack(h,DATA.tools) : false;
+      }catch(e){ saved=false; }
+    }
+  }
+  applyConfig({title:CONFIG.title, contactDefault:CONFIG.contactDefault});
+  closeModal('maskSet');
+  render();
+  toast(saved? '已保存' : '已应用（只在这台电脑生效）');
+});
+
+document.querySelectorAll('[data-close]').forEach(b=>{
+  b.addEventListener('click', ()=> closeModal(b.dataset.close));
+});
+document.querySelectorAll('.mask').forEach(m=>{
+  m.addEventListener('click', e=>{ if(e.target===m) m.classList.remove('on'); });
+});
+document.addEventListener('keydown', e=>{
+  if(e.key==='Escape'){ document.querySelectorAll('.mask.on').forEach(m=>m.classList.remove('on')); }
+  if((e.ctrlKey||e.metaKey) && e.key==='f'){ e.preventDefault(); $('#q').focus(); }
+});
+
+/* ================= 网页自己认文件夹 ================= */
+/* 授权一次（把「内部工具库」选给它），以后每次打开自动刷新，不用再点。 */
+
+const LS_HANDLE = 'toollib.dir.v1';
+
+function idbOpen(){
+  return new Promise((res,rej)=>{
+    let done=false;
+    const t=setTimeout(()=>{ if(!done){ done=true; rej(new Error('idb timeout')); } },2500);
+    try{
+      const r=indexedDB.open('toollib',1);
+      r.onupgradeneeded=()=>{ try{ r.result.createObjectStore('kv'); }catch(e){} };
+      r.onsuccess=()=>{ if(!done){ done=true; clearTimeout(t); res(r.result); } };
+      r.onerror=()=>{ if(!done){ done=true; clearTimeout(t); rej(r.error||new Error('idb error')); } };
+    }catch(e){ if(!done){ done=true; clearTimeout(t); rej(e); } }
+  });
+}
+async function idbSet(k,v){
+  try{ const db=await idbOpen(); return new Promise(res=>{
+    const tx=db.transaction('kv','readwrite'); tx.objectStore('kv').put(v,k);
+    tx.oncomplete=()=>res(true); tx.onerror=()=>res(false);
+  }); }catch(e){ return false; }
+}
+async function idbGet(k){
+  try{ const db=await idbOpen(); return new Promise(res=>{
+    const tx=db.transaction('kv','readonly'); const rq=tx.objectStore('kv').get(k);
+    rq.onsuccess=()=>res(rq.result||null); rq.onerror=()=>res(null);
+  }); }catch(e){ return null; }
+}
+
+/* 「WI一致性检查2.0用户」/「WI一致性检查 v2.0 用户」→ 标题 / 版本 / 负责人。
+   规则跟 admin\build_index.py 的 parse_folder 一模一样，三路兜底：
+   一、空格分开的，中间那段正好是纯版本号；
+   二、连写的，在整串里找版本号（先 x.y，再整数 —— PDF2Word 不能被切成 2）；
+   三、名字里没版本号，就看结尾是不是 config.json 的 people 名单里的人。 */
+const RE_VER_DOTTED = /(?<![\d.])[vV]?(\d+(?:\.\d+)+)(?![\d.])/;
+const RE_VER_INT    = /(?<![A-Za-z0-9.])[vV]?(\d+)(?![A-Za-z0-9.])/;
+
+/* 中文和英文/数字之间加空格，扫起来不挤成一坨 */
+function cjkSpace(s){
+  return String(s||'')
+    .replace(/([A-Za-z0-9])([\u4e00-\u9fff])/g,'$1 $2')
+    .replace(/([\u4e00-\u9fff])([A-Za-z0-9])/g,'$1 $2');
+}
+
+function parseFolder(name){
+  const raw=String(name||'').trim();
+  if(!raw) return {title:name||'',version:'',owner:''};
+
+  /* 一、空格分开的 */
+  const toks=raw.split(/\s+/).filter(Boolean);
+  for(let i=0;i<toks.length;i++){
+    if(/^[vV]?\d+(?:\.\d+)*$/.test(toks[i])){
+      return {
+        title: cjkSpace(toks.slice(0,i).join(' ')) || toks.join(' '),
+        version: toks[i].replace(/^[vV]/,''),
+        owner: toks.slice(i+1).join(' ').trim()
+      };
+    }
+  }
+
+  /* 二、连写的，整串里找版本号 */
+  for(const rx of [RE_VER_DOTTED, RE_VER_INT]){
+    const m=rx.exec(raw);
+    if(!m) continue;
+    const head=raw.slice(0,m.index).trim(), tail=raw.slice(m.index+m[0].length).trim();
+    if(head && tail) return {title:cjkSpace(head), version:m[1].replace(/^[vV]/,''), owner:tail};
+  }
+
+  /* 三、没版本号：结尾是名单里的人就算负责人 */
+  const people=((CONFIG&&CONFIG.people)||[]).filter(Boolean).sort((a,b)=>b.length-a.length);
+  for(const who of people){
+    if(raw.endsWith(who) && raw.length>who.length)
+      return {title:cjkSpace(raw.slice(0,raw.length-who.length)), version:'', owner:who};
+  }
+  return {title:cjkSpace(raw), version:'', owner:''};
+}
+
+/* 只读 zip 结尾的目录表，拿包根目录里有哪些文件/文件夹，
+   顺便把包里那份「操作说明书」找出来（每版说明书跟着版本走，就躺在包里）。
+   不解压 —— 大包（二十几 MB）也只读末尾几 KB。 */
+const MANUAL_RE=/说明|readme|手册|指南|操作|manual/i;
+const MANUAL_EXT=/\.(txt|md|pdf|docx?|chm|html?)$/i;
+
+async function zipRoot(file, prefix){
+  const empty={files:[],dirs:[],manuals:[]};
+  prefix=prefix||'';
+  try{
+    const buf=await file.arrayBuffer();
+    const dv=new DataView(buf), u8=new Uint8Array(buf);
+    let e=-1;
+    for(let i=buf.byteLength-22;i>=Math.max(0,buf.byteLength-65557);i--)
+      if(dv.getUint32(i,true)===0x06054b50){ e=i; break; }
+    if(e<0) return empty;
+    const n=dv.getUint16(e+10,true), cdOff=dv.getUint32(e+16,true);
+    const files=[], dirs=[], manuals=[]; let p=cdOff;
+    for(let k=0;k<n;k++){
+      if(dv.getUint32(p,true)!==0x02014b50) break;
+      const nl=dv.getUint16(p+28,true), xl=dv.getUint16(p+30,true), cl=dv.getUint16(p+32,true);
+      const usize=dv.getUint32(p+24,true);
+      let name=new TextDecoder('utf-8').decode(u8.subarray(p+46,p+46+nl));
+      if(name && MANUAL_RE.test(name) && MANUAL_EXT.test(name)
+         && manuals.length<4
+         && !manuals.some(m=>m.n===name))
+        manuals.push({n:name, size:usize});
+      if(prefix){
+        name = (name.indexOf(prefix)===0) ? name.slice(prefix.length) : '';
+      }
+      if(name){
+        const seg=name.split('/')[0];
+        if(name.indexOf('/')<0){ if(files.indexOf(name)<0) files.push(name); }
+        else if(seg && dirs.indexOf(seg)<0) dirs.push(seg);   // 深层路径只取第一层文件夹名
+      }
+      p+=46+nl+xl+cl;
+    }
+    /* 文件名短的排前面（通常就是主说明），最多留 3 条 */
+    manuals.sort((a,b)=> a.n.length-b.n.length);
+    return {files, dirs, manuals:manuals.slice(0,3)};
+  }catch(e){ return empty; }
+}
+
+/* 文件夹里那份说明的候选名。**总说明.md 排第一** —— 那是 skill v2.0 定的标准名
+   （由总表渲染、六段结构）；老的 说明.txt 继续认，不然一改名卡片就全空。 */
+const DOC_NAMES=['总说明.md','说明.txt','先看我.txt','README.txt','使用说明书.txt','使用说明.txt'];
+
+/* 说明文件里那句话，当卡片上的一句话简介。规则跟 build_index.py 的 first_line 一致：
+   · 说明.txt —— 第一行就是那句话
+   · 总说明.md —— 取「## 一句话」下面那段；标题行和紧跟的灰行（分类 · 部门 · 状态…）跳过 */
+function firstLine(text, title){
+  const raw=String(text||'').replace(/\r\n/g,'\n').replace(/\r/g,'\n');
+  const lines=raw.split('\n').map(s=>s.trim());
+  const isRule=s=>/^[\s=—\-_·*#]{3,}$/.test(s);
+
+  if(lines.some(s=>s.charAt(0)==='#')){
+    let start=-1;
+    for(let k=0;k<lines.length;k++){
+      if(/^#{1,3}\s*一句话\s*$/.test(lines[k])){ start=k+1; break; }
+    }
+    if(start>=0){
+      for(let k=start;k<lines.length;k++){
+        const s=lines[k];
+        if(s.charAt(0)==='#') break;
+        if(s && !isRule(s)) return s;
+      }
+    }
+    for(const s of lines){
+      if(!s || s.charAt(0)==='#' || isRule(s)) continue;
+      if((s.match(/ · /g)||[]).length>=2) continue;   /* 灰行 */
+      return s.length<=80 ? s : '';
+    }
+    return '';
+  }
+
+  const body=lines.filter(s=>s && !isRule(s));
+  if(!body.length) return '';
+  let first=body[0];
+  if(title && (first.indexOf(title)>=0 || title.indexOf(first)>=0) && body.length>1) first=body[1];
+  return first.length<=80 ? first : '';
+}
+
+/* 版本号：PDF对比工具 6.0 Windows版.zip → 6.0
+   带小数点的优先；只有整数时先去掉系统名，免得把「Windows 10」的 10 当版本 */
+function verOf(name){
+  const s0=String(name||'').replace(/\.zip$/i,'');
+  let m=s0.match(/(\d+(?:\.\d+)+)/);
+  if(m) return m[1];
+  const s1=s0.replace(/windows|win11|win10|\bwin\b/ig,' ');
+  m=s1.match(/(?<![\d.])(\d+)(?![\d.])/);
+  return m? m[1] : '';
+}
+/* 版本号从大到小比：6.10 > 6.9 > 6.0 */
+function cmpVer(a,b){
+  const pa=String(a||'0').split('.').map(n=>parseInt(n,10)||0);
+  const pb=String(b||'0').split('.').map(n=>parseInt(n,10)||0);
+  for(let i=0;i<Math.max(pa.length,pb.length);i++){
+    const x=pa[i]||0, y=pb[i]||0;
+    if(x!==y) return x-y;
+  }
+  return 0;
+}
+/* 从包根目录里认启动器和环境准备。只认 .bat —— 库里的东西全是 Windows 的 */
+function pickLaunch(root){
+  let launch='', prep='';
+  root.files.concat(root.dirs).forEach(n=>{
+    if(!n.toLowerCase().endsWith('.bat')) return;
+    if(/环境准备|setup/i.test(n)) prep=prep||n;
+    else if(/启动|start/i.test(n)) launch=launch||n;
+  });
+  return {launch, prep};
+}
+
+/* 一个工具文件夹 → 页面上的一条。
+   里面可以躺好几个版本：版本号最高的当当前版，其余进「历史 N」。 */
+async function scanToolFolder(folderName, dirHandle){
+  const {title,version,owner}=parseFolder(folderName);
+  const zips=[]; let doc='', docName='';
+  const docs=[];                       /* 先把说明文件都记下来，最后按 DOC_NAMES 优先级挑 */
+  for await(const [name,handle] of dirHandle){
+    if(handle.kind!=='file') continue;
+    if(name.toLowerCase().endsWith('.zip')){
+      try{
+        const f=await handle.getFile();
+        zips.push({pkg:name, file:f, v:verOf(name)});
+      }catch(e){}
+    }else if(DOC_NAMES.indexOf(name)>=0){
+      docs.push({name, handle});
+    }
+  }
+  /* 总说明.md 和 说明.txt 同时躺着时（过渡期），永远认排在前面那个 */
+  let picked=null;
+  for(const want of DOC_NAMES){
+    picked=docs.find(d=>d.name===want);
+    if(picked) break;
+  }
+  if(picked){
+    try{ doc=(await (await picked.handle.getFile()).text()).trim(); docName=picked.name; }catch(e){}
+  }
+  if(!zips.length) return null;
+
+  const day=f=>new Date(f.lastModified).toISOString().slice(0,10);
+  const pkgPathOf=n=>DIRS.lib+'/'+folderName+'/'+n;
+
+  /* 版本号最高的当当前版，其余进历史 */
+  const group=zips.sort((a,b)=>cmpVer(b.v,a.v));
+  const cur=group[0], older=group.slice(1);
+  const root=await zipRoot(cur.file);
+  let {launch,prep}=pickLaunch(root);
+  /* 有的包在外头又套了一层同名文件夹（解压后要多点进去一次），
+     根上找不到启动器就再往里看一层 */
+  if(!launch && root.dirs.length===1){
+    const inner=await zipRoot(cur.file, root.dirs[0]+'/');
+    const r2=pickLaunch(inner);
+    if(r2.launch || r2.prep){ launch=launch||r2.launch; prep=prep||r2.prep; }
+  }
+
+  /* 版本以文件夹名为准（两柜同一套规矩）；包名只用来排「历史」的先后 */
+  if(version && cur.v && cmpVer(cur.v, version)!==0)
+    noteScan.push('「'+folderName+'」文件夹名写 '+version+'，包里最新的是 '+cur.v+' —— 页面按文件夹名显示');
+  if(!owner) noteScan.push('「'+folderName+'」的文件夹名里没写负责人（建议写成「工具名+版本号+姓名」）');
+  if(!docName) noteScan.push('「'+folderName+'」里没有 总说明.md（老的 说明.txt 也认）');
+
+  /* 卡片上那句一句话简介：说明.txt 取第一行，总说明.md 取「## 一句话」那段 */
+  const first = firstLine(doc, title);
+
+  return {
+    id: folderName, name: title, folder: folderName,
+    kind: 'app',
+    desc: (first.length<=80? first : ''),
+    note:'', cat:'', contact: owner || (CONFIG.contactDefault||''),
+    order: 100,
+    readme: doc, docName,
+    version: version || cur.v || '?',
+    pkg: cur.pkg,
+    pkgPath: pkgPathOf(cur.pkg),
+    size: cur.file.size,
+    sha256: '',
+    updated: day(cur.file),
+    launch, prep,
+    manual: root.manuals || [],
+    older: older.map(z=>({v:z.v||'?', pkg:z.pkg, pkgPath:pkgPathOf(z.pkg),
+                          size:z.file.size, updated:day(z.file)}))
+  };
+}
+
+let noteScan=[];
+
+/* 一个「文档代码库」文件夹 → 页面上的一条。
+   里面所有文件都收（含子文件夹），路径照原样留着 —— skill 靠层级认东西。 */
+const DOC_JUNK=/^(\._|\.DS_Store$)/;
+
+async function walkFiles(dirHandle, prefix, out, depth){
+  if(depth>6) return;
+  for await(const [name,handle] of dirHandle){
+    if(DOC_JUNK.test(name)) continue;
+    const rel = prefix ? prefix+'/'+name : name;
+    if(handle.kind==='file'){
+      try{
+        const f=await handle.getFile();
+        out.push({n:rel, size:f.size, file:f});
+      }catch(e){}
+    }else if(handle.kind==='directory'){
+      await walkFiles(handle, rel, out, depth+1);
+    }
+  }
+}
+
+async function scanDocFolder(folderName, dirHandle){
+  /* 这一柜不认版本号 —— 只要工具名和负责人，版本号写在名字里也会被忽略 */
+  const {title,owner}=parseFolder(folderName);
+  const all=[];
+  await walkFiles(dirHandle,'',all,0);
+  if(!all.length) return null;
+
+  /* 说明：根目录那份优先，规矩和软件那边一样；总说明.md 排在候选名单第一位 */
+  const roots=all.filter(f=> f.n.indexOf('/')<0);
+  let doc='', docName='';
+  let pick=null;
+  for(const want of DOC_NAMES){
+    pick = roots.find(f=> f.n===want);
+    if(pick) break;
+  }
+  if(!pick) pick = roots.find(f=> /^(总说明|使用说明书|说明|先看我|readme)/i.test(f.n) && /\.(txt|md)$/i.test(f.n));
+  if(pick){
+    try{ doc=(await pick.file.text()).trim(); docName=pick.n; }catch(e){}
+  }
+
+  all.sort((a,b)=> a.n.localeCompare(b.n,'zh'));
+  const size=all.reduce((s,f)=>s+f.size,0);
+  const mt=all.reduce((m,f)=> Math.max(m, f.file.lastModified||0), 0);
+  const day=new Date(mt||Date.now()).toISOString().slice(0,10);
+
+  const first = firstLine(doc, title);
+
+  if(!docName) noteScan.push('「'+folderName+'」里没有 总说明.md（老的 说明.txt 也认），简介和说明会空着');
+  if(!owner) noteScan.push('「'+folderName+'」的文件夹名里没认出负责人（写成「工具名+姓名」，姓名要跟 config.json 的 people 对得上）');
+
+  return {
+    id: folderName, name: title, folder: folderName, kind:'doc',
+    desc: (first.length<=80? first : ''),
+    note:'', cat:'', contact: owner || (CONFIG.contactDefault||''),
+    order: 100,
+    readme: doc.length>20000 ? doc.slice(0,20000)+'\n\n……（太长了，后面的看文件夹里的 '+docName+'）' : doc,
+    docName,
+    updated: day,
+    size,
+    dir: DIRS.doc+'/'+folderName,
+    /* 「看文件」只列要拿的东西：说明书在「说明」弹窗里已经完整显示，不算一份料 */
+    files: (all.filter(f=> f.n!==docName).length ? all.filter(f=> f.n!==docName) : all)
+             .map(f=>({n:f.n, size:f.size, rel:DIRS.doc+'/'+folderName+'/'+f.n}))
+  };
+}
+
+function normName(s){ return String(s||'').replace(/[\s\-_·．.]+/g,'').toLowerCase(); }
+
+/* 同名文件夹并排放着（改过名、旧的没删）时只留一份：文档代码库不写版本号，
+   只能按「谁更新」留 —— 同一天改的，留文件夹名排序靠后的那个。 */
+function dedupeDocs(list){
+  const by={};
+  list.forEach(t=>{
+    const k=normName(t.name);
+    if(!by[k]){ by[k]=t; return; }
+    const a=touched(t), b=touched(by[k]);
+    if(a>b || (a===b && String(t.folder||'')>String(by[k].folder||''))) by[k]=t;
+  });
+  const kept=Object.keys(by).map(k=>by[k]);
+  if(kept.length<list.length)
+    noteScan.push(DIRS.doc+' 里有同名文件夹，页面只显示最近更新的那一个（旧的可以删掉）');
+  return kept;
+}
+
+async function safeDir(parent, name){
+  try{ return await parent.getDirectoryHandle(name); }catch(e){ return null; }
+}
+
+/* 扫一柜：里面每个文件夹算一条 */
+async function scanShelf(dir, fn){
+  const out=[];
+  for await(const [name,handle] of dir){
+    if(handle.kind!=='directory') continue;
+    if(name.startsWith('.')||name.startsWith('_')) continue;
+    try{
+      const t=await fn(name,handle);
+      if(t) out.push(t);
+    }catch(e){ noteScan.push('「'+name+'」读不出来：'+e); }
+  }
+  return out;
+}
+
+async function rescan(rootHandle){
+  noteScan=[];
+  let tools=[];
+
+  const appDir = await safeDir(rootHandle,DIRS.lib);
+  const docDir = await safeDir(rootHandle,DIRS.doc);
+
+  /* 两个子目录都没有 → 选的大概就是一个货架本身，按老办法直接扫它 */
+  const marker = await safeDir(rootHandle,DIRS.admin);
+  const libDir = appDir || (docDir || marker ? null : rootHandle);
+
+  if(libDir) tools = tools.concat(await scanShelf(libDir, scanToolFolder));
+  if(docDir) tools = tools.concat(dedupeDocs(await scanShelf(docDir, scanDocFolder)));
+
+  tools.sort((a,b)=> String(a.name).localeCompare(String(b.name),'zh'));
+  return tools;
+}
+
+async function writeBack(rootHandle,tools){
+  try{
+    const fh=await rootHandle.getFileHandle(pageFile());
+    const text=await (await fh.getFile()).text();
+    const i=text.indexOf('/*__DATA_BEGIN__*/'), j=text.indexOf('/*__DATA_END__*/');
+    if(i<0||j<0||j<i) return false;
+    const block='\nconst CONFIG = '+JSON.stringify(CONFIG)+';\nconst DATA   = '
+      +JSON.stringify({generated:new Date().toISOString().slice(0,10),tools:tools})+';\n';
+    const w=await fh.createWritable();
+    await w.write(text.slice(0,i+'/*__DATA_BEGIN__*/'.length)+block+text.slice(j));
+    await w.close();
+    return true;
+  }catch(e){ return false; }
+}
+
+async function doRescan(rootHandle){
+  const tools=await rescan(rootHandle);
+  DATA.tools=tools;
+  DATA.generated=new Date().toISOString().slice(0,10);
+  await idbSet(LS_HANDLE,rootHandle);
+  const saved=await writeBack(rootHandle,tools);
+  hideStale();
+  render(); refreshHeader();
+  toast('认到 '+tools.length+' 个工具'+(saved?'，已写回网页':'（网页文件没写成，仅本次有效）'));
+  noteScan.forEach(x=>console.warn(x));
+  const h=$('#scanHint');
+  if(h) h.textContent='上次刷新：'+DATA.generated+'，认到 '+tools.length+' 个'+(saved?'，已保存':'');
+}
+
+/* 打开时试一次自动重扫：这个浏览器还记得授权就直接刷，记不得就露提示条等一次点击 */
+async function ensureRescan(){
+  const h=await idbGet(LS_HANDLE);
+  if(!h){ showRescanBanner(); return; }
+  let perm='';
+  try{ perm=await h.queryPermission({mode:'readwrite'}); }catch(e){ perm=''; }
+  if(perm==='granted'){ await doRescan(h); return; }
+  showRescanBanner();
+}
+
+/* 没能自己扫时，露一条细横条，说清楚该怎么办，带个叉能关掉 */
+let scanState='';
+function showStale(html){
+  scanState='双击 启动工具库.bat 打开，网页就能自己扫';
+  const bar=$('#staleBar'), t=$('#staleTxt');
+  if(t) t.innerHTML = html || ('这份清单是 <b>'+esc(DATA.generated||'—')+'</b> 扫的，之后动过文件夹就不准了。');
+  if(bar) bar.hidden=false;
+}
+
+function showRescanBanner(){
+  showStale(DATA.generated
+    ? '这份清单是 <b>'+esc(DATA.generated)+'</b> 扫的，之后动过文件夹就不准了。'
+      + '想让网页自己发现新东西，双击 <b>启动工具库.bat</b> 打开（不用选文件夹）。'
+    : '现在这份清单是随网页一起带过来的。双击 <b>启动工具库.bat</b> 打开，网页就能自己扫。');
+}
+
+function hideStale(){
+  scanState='';
+  const bar=$('#staleBar'); if(bar) bar.hidden=true;
+}
+
+function refreshHeader(){
+  /* 数量那个数由 render() 按当前货架算，这里只管「更新到哪天」 */
+  $('#statTime').textContent=DATA.generated||'—';
+}
+
+/* ================= 启动 ================= */
+function applyConfig(c){
+  if(c.title) CONFIG.title=c.title;
+  if(typeof c.subtitle==='string') CONFIG.subtitle=c.subtitle;
+  if(typeof c.contactDefault==='string') CONFIG.contactDefault=c.contactDefault;
+  $('#siteTitle').textContent = CONFIG.title || '内部工具库';
+  $('#siteSub').textContent   = CONFIG.subtitle || '';
+  document.title = CONFIG.title || '内部工具库';
+}
+
+/* 页面和 serve.py 要配套。对不上就明说，省得点「复制」时莫名其妙 */
+const PAGE_BUILD = '2026-11-09e';
+
+/* 起本地服务时（双击 启动工具库.bat）走这条路：
+   每次打开 / 每次刷新都问服务要一次清单，不用授权、不用选文件夹。
+
+   注意服务端现在是「先起界面、后扫清单」：第一次问到的可能是上次的缓存，
+   也可能什么都没有（全新机器）。所以这里要能接住 scanning 这个信号 ——
+   先把手上这份显示出来，扫完自己再换一次，用户不用干等扫描。 */
+async function fetchLib(){
+  try{
+    const r=await fetch('/__lib',{cache:'no-store'});
+    if(!r.ok) return null;
+    return await r.json();
+  }catch(e){ return null; }
+}
+
+function applyLib(j){
+  if(!j) return false;
+  if(j.build && j.build!==PAGE_BUILD){
+    showStale('网页和 <b>启动工具库.bat</b> 不是同一批文件（一个旧一个新）。'
+      +'把整个「内部工具库」文件夹重新拷一份过来就对齐了。');
+  }
+  if(j.config) applyConfig(j.config);
+  if(j.root) ROOT=j.root;
+
+  /* 服务刚起来、后台还没扫完的时候，清单是空的。这时候别把页面上已有的东西
+     抹掉 —— 不然首屏会先空一下、再冒出来，看着像闪了一下。
+     反过来，如果扫完了确实是空的（库里真没东西），那就要如实显示空。 */
+  const incoming = j.tools || [];
+  if(incoming.length || !j.scanning || !DATA.tools || !DATA.tools.length){
+    DATA.tools = incoming;
+    if(j.generated) DATA.generated = j.generated;
+  }
+  noteScan=(j.notes||[]).slice();
+  if(j.error) showStale('扫描出错：'+String(j.error).slice(0,140)+'（下面是上一次的清单）');
+  return true;
+}
+
+/* 等后台扫完再换一次清单。扫描一般几十毫秒，大库也就一两秒，最多等 8 秒。 */
+async function pollScan(){
+  for(let i=0;i<40;i++){
+    await new Promise(r=>setTimeout(r,200));
+    const j=await fetchLib();
+    if(!j) continue;
+    if(j.scanning) continue;
+    applyLib(j); render(); refreshHeader();
+    return !j.error;
+  }
+  return false;
+}
+
+/* 「刷新清单」和首屏拉取共用：把按钮变成「正在扫…」，扫完还原 */
+function markScanning(on){
+  const b=$('#btnRefresh');
+  if(!b) return;
+  if(on){ b.dataset.busy='1'; b.disabled=true; b.textContent='正在扫…'; }
+  else  { delete b.dataset.busy; b.disabled=false; b.textContent='刷新清单'; }
+}
+
+/* 「刷新清单」：让服务重扫一遍，扫完把新清单换上。
+   以前这里只写了 location.reload() —— 整页重来一遍，但服务端并不会重新扫，
+   等于白刷一遍：刚往库里放的包还是看不见。 */
+async function refreshList(){
+  const b=$('#btnRefresh');
+  if(b && b.dataset.busy==='1') return;
+  if(location.protocol==='http:' || location.protocol==='https:'){
+    markScanning(true);
+    try{
+      await fetch('/__scan',{method:'POST',headers:{'X-Lib':'1'}});
+      const ok=await pollScan();
+      if(ok) hideStale();
+      else showStale('这次没扫成，还在用上一次的清单。');
+    }catch(e){
+      showStale('没连上本地服务，刷新不了。');
+    }finally{
+      markScanning(false);
+    }
+  }else{
+    /* 纯网页版：没有服务可指挥，只能走浏览器授权那条路重扫 */
+    ensureRescan();
+  }
+}
+
+async function loadFromServer(){
+  const j=await fetchLib();
+  if(!j) return false;
+  applyLib(j);
+  render(); refreshHeader();
+  if(j.scanning){                      // 后台还在扫：先把手上这份摆出来
+    markScanning(true);
+    const ok=await pollScan();
+    markScanning(false);
+    if(ok) hideStale();
+  }
+  return true;
+}
+
+/* 双击 html 打开时，先找一下本机服务是不是已经在跑（黑窗口还开着）。
+   在跑就直接跳到服务版：清单是现扫的，「打开文件夹 / 复制」也都能用。
+   没在跑再走「浏览器授权」那条老路。 */
+/* 双击 html 打开时，先找一下本机服务是不是已经在跑（黑窗口还开着）。
+   在跑就直接跳到服务版：清单是现扫的，「复制 / 打开文件夹」也都能用。
+   没在跑再走「浏览器授权」那条老路。
+
+   两点讲究：
+   1. 每个端口都要限时。这台机器上连本机的关闭端口是被静默丢弃的，
+      不掐的话浏览器会干等很久，用户双击完只看到一个转圈的白页。
+   2. 只探前 6 个就够。服务用的端口号记在 admin\运行端口.txt 里，
+      正常情况第一次双击就是 8765，被占了也只是往后挪一两个。 */
+async function findServer(){
+  for(let p=8765;p<=8770;p++){
+    try{
+      const ac=new AbortController();
+      const timer=setTimeout(()=>ac.abort(), 300);
+      const r=await fetch('http://127.0.0.1:'+p+'/__ping',{cache:'no-store',signal:ac.signal});
+      clearTimeout(timer);
+      if(r.ok && (await r.text()).trim().startsWith('ok')) return p;
+    }catch(e){}
+  }
+  return 0;
+}
+
+/* 连不上就再来一轮，直到用完 budget 毫秒。
+
+   为什么要等：启动工具库.bat 现在是「先开网页、后起 Python」。网页一两秒就出来，
+   Python 要从网络盘上爬 8~11 秒（实测：连 -c "pass" 都要 6.8~8.4 秒，
+   加载服务要用的模块要 10.6~10.8 秒）。这段空档里页面按纯网页模式先跑着 ——
+   能看、能搜、能下载，只是「复制 / 打开文件夹」暂时不行。服务一应答，
+   boot() 就把整页跳到 http://127.0.0.1:端口/，那两个按钮也就齐了。
+
+   一轮 findServer() 最坏 6 个端口 × 300 毫秒 = 1.8 秒，所以 15 秒里能试七八轮。 */
+async function waitServer(budget){
+  const t0 = Date.now();
+  while(Date.now()-t0 < budget){
+    const p = await findServer();
+    if(p) return p;
+    await new Promise(r=>setTimeout(r, 400));
+  }
+  return 0;
+}
+
+/* 服务连上了就整页跳到服务版：清单现扫，「复制 / 打开文件夹」也能用。
+
+   唯一要防的是打扰：这十秒里用户可能已经点开一个详情弹窗在看了，
+   这时候整页 replace 会把他看的东西刷掉。所以先等弹窗关掉再跳；
+   万一一直开着，45 秒后就不再等，留在纯网页模式（下次打开就快了）。 */
+function jumpWhenIdle(port){
+  const t0 = Date.now();
+  const step = ()=>{
+    if(document.querySelector('.mask.on') && Date.now()-t0 < 45000){
+      setTimeout(step, 800);
+      return;
+    }
+    if(document.querySelector('.mask.on')) return;   /* 等太久，放弃，别打扰 */
+    location.replace('http://127.0.0.1:'+port+'/');
+  };
+  setTimeout(step, 600);
+}
+
+function boot(){
+  const title = CONFIG.title || '内部工具库';
+  $('#siteTitle').textContent = title;
+  $('#siteSub').textContent   = CONFIG.subtitle || '';
+  document.title = title;
+  refreshHeader();
+
+  $('#footText').innerHTML =
+    '<div>不联网 · 清单自己扫 · 文件夹搬到哪都能用</div>';
+
+  render();
+
+  if(location.protocol==='http:' || location.protocol==='https:'){
+    loadFromServer().then(ok=>{
+      if(ok){ hideStale(); render(); refreshHeader(); }
+      else showStale('没连上本地服务。双击 <b>启动工具库.bat</b> 再打开网页。');
+    });
+  }else{
+    /* 双击 bat 或 html 打开的。bat 会先把网页叫出来，Python 在后头起，
+       大概十来秒。所以这里不能只探一轮就走人 —— 先按纯网页模式跑着
+       （能看、能搜、能下载），同时一直等到服务应答，等到了整页跳过去。
+       电脑上压根没装 Python 的，等到点就走浏览器授权那条老路。 */
+    toast('正在连本机服务…能看、能搜、能下载；连上以后「复制 / 打开文件夹」才可用', 5000);
+    waitServer(15000).then(p=>{
+      if(p){
+        /* 服务起来了：换到服务版，清单是现扫的，两个按钮也能用了 */
+        jumpWhenIdle(p);
+        return;
+      }
+      toast('没等来本机服务，按纯网页模式用：点「复制」拿到的是文件路径，'
+        +'粘到资源管理器地址栏回车就定位到了。要完整功能就双击「启动工具库.bat」', 8000);
+      ensureRescan();
+    });
+  }
+}
+boot();
+
+/* 网页还开着就每 10 秒跟本机服务打个招呼，说明「我还在用」。 */
+if(location.protocol==='http:'||location.protocol==='https:'){
+  setInterval(()=>{ fetch('/__ping',{cache:'no-store'}).catch(()=>{}); }, 10000);
+
+  /* 页面要关掉了，主动说一声 —— 服务端收到就准备收摊（十秒左右），
+     黑窗口跟着消失，不用用户去关。
+     用 sendBeacon：页面正在关闭时普通 fetch 会被掐掉，只有它能发出去。
+     刷新（F5）也会触发这个，但新页面立刻就重新打招呼了，不会误退。 */
+  window.addEventListener('pagehide', ()=>{
+    try{
+      if(navigator.sendBeacon) navigator.sendBeacon('/__bye', '');
+      else fetch('/__bye',{method:'POST', keepalive:true}).catch(()=>{});
+    }catch(e){}
+  });
+}
+</script>
+</body>
+</html>

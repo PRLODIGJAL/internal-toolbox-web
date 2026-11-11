@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+.DS_Store
+runtime/
+软件工具库/
+文档代码库/
+admin/清单缓存.json
+admin/索引缓存.json
+admin/运行端口.txt
